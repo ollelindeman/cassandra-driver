@@ -42,7 +42,7 @@ func (driver *Driver) Initialize(rawurl string) error {
 	cluster.Timeout = 1 * time.Minute
 
 	if len(u.Query().Get("consistency")) > 0 {
-		consistency, err := parseConsistency(u.Query().Get("consistency"))
+		consistency, err := gocql.ParseConsistency(u.Query().Get("consistency"))
 		if err != nil {
 			return err
 		}
@@ -174,21 +174,4 @@ func (driver *Driver) Execute(statement string) error {
 
 func init() {
 	driver.RegisterDriver("cassandra", &Driver{})
-}
-
-// ParseConsistency wraps gocql.ParseConsistency to return an error
-// instead of a panicing.
-func parseConsistency(consistencyStr string) (consistency gocql.Consistency, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			var ok bool
-			err, ok = r.(error)
-			if !ok {
-				err = fmt.Errorf("Failed to parse consistency \"%s\": %v", consistencyStr, r)
-			}
-		}
-	}()
-	consistency = gocql.ParseConsistency(consistencyStr)
-
-	return consistency, nil
 }
